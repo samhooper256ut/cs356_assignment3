@@ -48,6 +48,10 @@ class Route():
         # If the newRoute's cost is smaller, update the self's attributes 
         # to those of newRoute and return True.
         # Otherwise, return False
+        if newRoute.cost < self.cost:
+            self.nextHopIP = newRoute.nextHopIP
+            self.cost = newRoute.cost
+            return True
         return False
         
 def dump_routing_table():
@@ -375,6 +379,21 @@ def main(p4info_file_path, bmv2_file_path, routing_info, adj_info, part):
                     ### PART2_TODO: Add arp_table and dmac_forward table entries
                     ### using the above information from ARP reply
                     ### Use p4info_helper.buildTableEntry and s1.WriteTableEntry as in A2
+                    table_entry = p4info_helper.buildTableEntry(
+                        table_name='MyIngress.arp_table',
+                        match_fields={'meta.next_hop': next_hop_ip },
+                        action_name='MyIngress.change_dst_mac',
+                        action_params={'dst_mac': next_hop_mac }
+                    )
+                    s1.WriteTableEntry(table_entry)
+
+                    table_entry = p4info_helper.buildTableEntry(
+                        table_name='MyIngress.dmac_forward',
+                        match_fields={'hdr.ethernet.dstAddr': next_hop_mac },
+                        action_name='MyIngress.forward_to_port',
+                        action_params={'egress_port': egress_port, 'egress_mac': egress_mac}
+                    )
+                    s1.WriteTableEntry(table_entry)
                         
                     # Dequeue packets waiting for the ARP reply
                     next_hop_int = int(ipaddress.ip_address(next_hop_ip))
@@ -430,19 +449,38 @@ def main(p4info_file_path, bmv2_file_path, routing_info, adj_info, part):
                                 # The address in the RIP response is in the routing table
                                 
                                 # PART3_TODO: Try to merge routes and update the routing table on success.
-                                # 1. Merge an existing route (routing_Table[entry.addr]) with 
+                                # 1. Merge an existing route (routing_table[entry.addr]) with 
                                 #    newRoute using the mergeRoute method. 
+
                                 # 2. If the method returns True, update the ipv4_route table in the data plane.
                                 # * Use prefix_length of 32 for the match_fields parameter of buildTableEntry
                                 # * Specify is_modify=True as the parameter of WriteTableEntry
+                                if routing_table[entry.addr].mergeRoute(newRoute):
+                                    table_entry = p4info_helper.buildTableEntry(
+                                        table_name='MyIngress.ipv4_route',
+                                        match_fields={'hdr.ipv4.dstAddr': (pkt[IP].dst, 32) },
+                                        action_name='MyIngress.forward_to_next_hop',
+                                        action_params={'next_hop': routing_table[entry.addr].nextHopIP }
+                                    )
+                                    s1.WriteTableEntry(table_entry, is_modify=True)
+
                                 # 3. If the method returns False, do nothing since there's no update.
                                 pass
                             else:
                                 # PART3_TODO: Route to a new address, add it.
                                 # 1. Add it to the routing_table dictionary using 
                                 # entry.addr as a key and new Route as a value.
+                                routing_table[entry.addr] = newRoute
+
                                 # 2. Insert a table entry to the ipv4_route table in the data plane. 
                                 # * Use prefix_length of 32 for the match_fields parameter of buildTableEntry
+                                table_entry = p4info_helper.buildTableEntry(
+                                    table_name='MyIngress.ipv4_route',
+                                    match_fields={'hdr.ipv4.dstAddr': (pkt[IP].dst, 32) },
+                                    action_name='MyIngress.forward_to_next_hop',
+                                    action_params={'next_hop': routing_table[entry.addr].nextHopIP }
+                                )
+                                s1.WriteTableEntry(table_entry)
                                 pass
                                 
                         dump_routing_table()

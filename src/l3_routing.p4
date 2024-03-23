@@ -297,10 +297,19 @@ control MyIngress(inout headers hdr,
         /* This action changes an incoming echo request to an echo reply */
 
         /* 1. Set ICMP type to ICMP_TYPE_ECHO_REPLY and code to 0 */
+        hdr.icmp.type = ICMP_TYPE_ECHO_REPLY;
         /* 2. Set the TTL field of IPV4 header to 64 */
+        hdr.ipv4.ttl = 64;
         /* 3. Swap src and dst IP addresses */
+        ipAddr_t temp1 = hdr.ipv4.srcAddr;
+        hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
+        hdr.ipv4.dstAddr = temp1;
         /* 4. Swap src and dst MAC addresses */
+        macAddr_t temp2 = hdr.ethernet.srcAddr;
+        hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
+        hdr.ethernet.dstAddr = temp2;
         /* 5. Set egress_spec to the ingress port */
+        standard_metadata.egress_spec = standard_metadata.ingress_port;
     }
 
     action forward_to_next_hop(ipAddr_t next_hop){
@@ -332,10 +341,20 @@ control MyIngress(inout headers hdr,
               Set the opcode to ARP_OP_REPLY.
               Change the target MAC to the original ARP packet's sender MAC.
               Then swap the sender IP and target IP of the ARP header */
+            hdr.arp.op = ARP_OP_REPLY;
+            hdr.arp.tgtMAC = hdr.arp.sndMAC;
+            ipAddr_t temp = hdr.arp.sndIP;
+            hdr.arp.sndIP = hdr.arp.tgtIP;
+            hdr.arp.tgtIP = temp;
+
         /* 2. Complete an Ethernet header.  
               Change the dest MAC to the original packet's src MAC 
               Then set the src MAC to sndMAC */
+            hdr.ethernet.dstAddr = hdr.ethernet.srcAddr;
+            hdr.ethernet.srcAddr = sndMAC;
+            
         /* 3. Set egress_spec to the ingress_port */
+        standard_metadata.egress_spec = standard_metadata.ingress_port;
     }
     
     action clone_packet() {
@@ -426,16 +445,25 @@ control MyIngress(inout headers hdr,
         if (hdr.ipv4.ttl == 1) {
             /* PART1_TODO: send ICMP time exceeded message */
             /* 1. Send the ICMP time exceeded msg using action send_ICMP_error */
+            send_ICMP_error(ICMP_TYPE_TIME_EXCEEDED, 0);
             /* 2. Set the source IP address to the IP of the ingress port
                   using table icmp_ingerss_port_ip */
+            icmp_ingerss_port_ip.apply();
         }
         /* Check whether the packet's destination is router */
         else if (is_router_ip.apply().hit) {
             /* PART1_TODO: handle the packet of which destination is the router */
             /* 1. If the packet is an ICMP echo packet, send an ICMP echo reply */
             /* using action send_ICMP_echo_reply (you should complete the action) */
+            send_ICMP_echo_reply();
             /* 2. Else if the packet is TCP or UDP packet, */
             /* send an ICMP port unreachable msg using action send_ICMP_error */  
+            if(hdr.ipv4.proto == IPV4_TCP || hdr.ipv4.proto == IPV4_UDP) {
+                send_ICMP_error(ICMP_TYPE_DEST_UNREACHABLE, ICMP_CODE_PORT_UNREACHABLE);
+            }
+            else {
+                drop();
+            }
             /* 3. Otherwise, drop the packet */
         }
         /* Check if the packet is an ARP packet*/
