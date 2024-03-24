@@ -1,0 +1,5 @@
+{
+  "python.analysis.extraPaths": [
+    "./labs/part1_icmp/shared"
+  ]
+}
