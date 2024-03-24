@@ -1,0 +1,337 @@
+pkg_info {
+  arch: "v1model"
+}
+tables {
+  preamble {
+    id: 44063973
+    name: "MyIngress.ipv4_route"
+    alias: "ipv4_route"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ipv4.dstAddr"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 28697736
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 38908293
+    name: "MyIngress.arp_table"
+    alias: "arp_table"
+  }
+  match_fields {
+    id: 1
+    name: "meta.next_hop"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  action_refs {
+    id: 26385465
+  }
+  action_refs {
+    id: 25652968
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 48070933
+    name: "MyIngress.dmac_forward"
+    alias: "dmac_forward"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ethernet.dstAddr"
+    bitwidth: 48
+    match_type: EXACT
+  }
+  action_refs {
+    id: 17916951
+  }
+  action_refs {
+    id: 25652968
+  }
+  size: 24
+}
+tables {
+  preamble {
+    id: 35263252
+    name: "MyIngress.is_router_ip"
+    alias: "is_router_ip"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.ipv4.dstAddr"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 16
+}
+tables {
+  preamble {
+    id: 42269883
+    name: "MyIngress.icmp_ingress_port_ip"
+    alias: "icmp_ingress_port_ip"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 21566989
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 16
+}
+tables {
+  preamble {
+    id: 49886097
+    name: "MyIngress.arp_check_target"
+    alias: "arp_check_target"
+  }
+  match_fields {
+    id: 1
+    name: "hdr.arp.tgtIP"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  action_refs {
+    id: 19025679
+  }
+  action_refs {
+    id: 25652968
+  }
+  size: 16
+}
+tables {
+  preamble {
+    id: 35613206
+    name: "MyEgress.port_to_ARP_request"
+    alias: "port_to_ARP_request"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.egress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16935304
+  }
+  action_refs {
+    id: 20880156
+  }
+  size: 4
+}
+tables {
+  preamble {
+    id: 40107283
+    name: "MyEgress.dummy"
+    alias: "dummy"
+  }
+  match_fields {
+    id: 1
+    name: "standard_metadata.ingress_port"
+    bitwidth: 9
+    match_type: EXACT
+  }
+  action_refs {
+    id: 21257015
+  }
+  size: 1024
+  idle_timeout_behavior: NOTIFY_CONTROL
+}
+actions {
+  preamble {
+    id: 21257015
+    name: "NoAction"
+    alias: "NoAction"
+    annotations: "@noWarn(\"unused\")"
+  }
+}
+actions {
+  preamble {
+    id: 25652968
+    name: "MyIngress.drop"
+    alias: "MyIngress.drop"
+  }
+}
+actions {
+  preamble {
+    id: 17916951
+    name: "MyIngress.forward_to_port"
+    alias: "forward_to_port"
+  }
+  params {
+    id: 1
+    name: "egress_port"
+    bitwidth: 9
+  }
+  params {
+    id: 2
+    name: "egress_mac"
+    bitwidth: 48
+  }
+}
+actions {
+  preamble {
+    id: 18247127
+    name: "MyIngress.forward_to_cpu"
+    alias: "forward_to_cpu"
+  }
+}
+actions {
+  preamble {
+    id: 24951577
+    name: "MyIngress.decrement_ttl"
+    alias: "decrement_ttl"
+  }
+}
+actions {
+  preamble {
+    id: 19738343
+    name: "MyIngress.copy_icmp"
+    alias: "copy_icmp"
+  }
+}
+actions {
+  preamble {
+    id: 26391517
+    name: "MyIngress.send_ICMP_error"
+    alias: "send_ICMP_error"
+  }
+}
+actions {
+  preamble {
+    id: 23419040
+    name: "MyIngress.send_ICMP_echo_reply"
+    alias: "send_ICMP_echo_reply"
+  }
+}
+actions {
+  preamble {
+    id: 28697736
+    name: "MyIngress.forward_to_next_hop"
+    alias: "forward_to_next_hop"
+  }
+  params {
+    id: 1
+    name: "next_hop"
+    bitwidth: 32
+  }
+}
+actions {
+  preamble {
+    id: 26385465
+    name: "MyIngress.change_dst_mac"
+    alias: "change_dst_mac"
+  }
+  params {
+    id: 1
+    name: "dst_mac"
+    bitwidth: 48
+  }
+}
+actions {
+  preamble {
+    id: 21566989
+    name: "MyIngress.change_src_ip"
+    alias: "change_src_ip"
+  }
+  params {
+    id: 1
+    name: "port_ip"
+    bitwidth: 32
+  }
+}
+actions {
+  preamble {
+    id: 19025679
+    name: "MyIngress.send_ARP_response"
+    alias: "send_ARP_response"
+  }
+  params {
+    id: 1
+    name: "sndMAC"
+    bitwidth: 48
+  }
+}
+actions {
+  preamble {
+    id: 23719224
+    name: "MyIngress.clone_packet"
+    alias: "clone_packet"
+  }
+}
+actions {
+  preamble {
+    id: 20880156
+    name: "MyEgress.drop"
+    alias: "MyEgress.drop"
+  }
+}
+actions {
+  preamble {
+    id: 16935304
+    name: "MyEgress.send_ARP_request"
+    alias: "send_ARP_request"
+  }
+  params {
+    id: 1
+    name: "port_ip"
+    bitwidth: 32
+  }
+  params {
+    id: 2
+    name: "port_mac"
+    bitwidth: 48
+  }
+}
+controller_packet_metadata {
+  preamble {
+    id: 81826293
+    name: "packet_in"
+    alias: "packet_in"
+    annotations: "@controller_header(\"packet_in\")"
+  }
+  metadata {
+    id: 1
+    name: "op"
+    bitwidth: 8
+  }
+  metadata {
+    id: 2
+    name: "operand1"
+    bitwidth: 32
+  }
+}
+controller_packet_metadata {
+  preamble {
+    id: 76689799
+    name: "packet_out"
+    alias: "packet_out"
+    annotations: "@controller_header(\"packet_out\")"
+  }
+  metadata {
+    id: 1
+    name: "egress_port"
+    bitwidth: 32
+  }
+}
+type_info {
+}
