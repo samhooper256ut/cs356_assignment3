@@ -460,9 +460,11 @@ def main(p4info_file_path, bmv2_file_path, routing_info, adj_info, part):
                                 if routing_table[entry.addr].mergeRoute(newRoute):
                                     table_entry = p4info_helper.buildTableEntry(
                                         table_name='MyIngress.ipv4_route',
-                                        match_fields={'hdr.ipv4.dstAddr': (pkt[IP].dst, 32) },
+                                        # match_fields={'hdr.ipv4.dstAddr': (pkt[IP].dst, 32) },
+                                        match_fields={'hdr.ipv4.dstAddr': (entry.addr, 32) },
                                         action_name='MyIngress.forward_to_next_hop',
                                         action_params={'next_hop': routing_table[entry.addr].nextHopIP }
+                                        # action_params={'next_hop': pkt[IP].dst }
                                     )
                                     s1.WriteTableEntry(table_entry, is_modify=True)
 
@@ -478,9 +480,11 @@ def main(p4info_file_path, bmv2_file_path, routing_info, adj_info, part):
                                 # * Use prefix_length of 32 for the match_fields parameter of buildTableEntry
                                 table_entry = p4info_helper.buildTableEntry(
                                     table_name='MyIngress.ipv4_route',
-                                    match_fields={'hdr.ipv4.dstAddr': (pkt[IP].dst, 32) },
+                                    match_fields={'hdr.ipv4.dstAddr': (entry.addr, 32) },
+                                    # match_fields={'hdr.ipv4.dstAddr': (pkt[IP].dst, 32) },
                                     action_name='MyIngress.forward_to_next_hop',
                                     action_params={'next_hop': routing_table[entry.addr].nextHopIP }
+                                    # action_params={'next_hop': routing_table[entry.addr].nextHopIP }
                                 )
                                 s1.WriteTableEntry(table_entry)
                                 pass
